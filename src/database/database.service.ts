@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import * as mysql from 'mysql2/promise';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
@@ -12,18 +17,22 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit(): Promise<void> {
     const host = process.env.DB_HOST;
-    const port = Number(process.env.DB_PORT);
+    const port = Number(process.env.DB_PORT || 3306);
     const user = process.env.DB_USER;
     const password = process.env.DB_PASSWORD;
     const database = process.env.DB_NAME || 'defaultdb';
 
-    if (!host || !port || !user || !password) {
+    if (!host || !user || !password) {
       throw new Error(
-        'Missing database configuration. Check DB_HOST, DB_PORT, DB_USER, and DB_PASSWORD in .env',
+        'Missing database configuration. Check DB_HOST, DB_USER, and DB_PASSWORD.',
       );
     }
 
-    const caPath = path.join(process.cwd(), 'certs', 'ca.pem');
+    const caPath =
+      process.env.DB_CA_CERT_PATH ||
+      (process.env.RENDER
+        ? '/etc/secrets/ca.pem'
+        : path.join(process.cwd(), 'certs', 'ca.pem'));
 
     if (!fs.existsSync(caPath)) {
       throw new Error(`CA certificate not found: ${caPath}`);
