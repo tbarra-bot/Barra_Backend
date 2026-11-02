@@ -23,8 +23,7 @@ export class AuthController {
   ) {
     if (
       !body?.username?.trim() ||
-      typeof body.password !== 'string' ||
-      !body.password.trim()
+      !body?.password
     ) {
       throw new HttpException(
         'Username and password are required',
@@ -44,8 +43,7 @@ export class AuthController {
   ) {
     if (
       !body?.username?.trim() ||
-      typeof body.password !== 'string' ||
-      !body.password.trim()
+      !body?.password
     ) {
       throw new HttpException(
         'Username and password are required',
@@ -70,14 +68,12 @@ export class AuthController {
 
   @Post('logout')
   async logout(
-    @Body() body: { userId: number },
+    @Body() body: { userId: number | string },
   ) {
     const userId = Number(body?.userId);
 
     if (
-      body?.userId === undefined ||
-      body?.userId === null ||
-      body?.userId === '' ||
+      !body?.userId ||
       !Number.isInteger(userId) ||
       userId <= 0
     ) {
@@ -94,10 +90,7 @@ export class AuthController {
   async refresh(
     @Body() body: { refreshToken: string },
   ) {
-    if (
-      typeof body?.refreshToken !== 'string' ||
-      !body.refreshToken.trim()
-    ) {
+    if (!body?.refreshToken) {
       throw new HttpException(
         'Refresh token is required',
         HttpStatus.BAD_REQUEST,

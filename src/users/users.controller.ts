@@ -7,8 +7,8 @@ import {
   Delete,
   Body,
   Param,
-  ParseIntPipe,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 
 import { UsersService } from './users.service';
@@ -20,55 +20,39 @@ export class UsersController {
     private readonly usersService: UsersService,
   ) {}
 
-  @UseGuards(JwtAuthGuard)
+  @Post()
+  create(@Body() body: any) {
+    return this.usersService.create(body);
+  }
+
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll() {
     return this.usersService.findAll();
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   findOne(
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.usersService.findById(id);
+    return this.usersService.findOne(id);
   }
 
-  @Post()
-  create(
-    @Body()
-    body: {
-      username: string;
-      password: string;
-      role?: string;
-    },
-  ) {
-    return this.usersService.createUser(
-      body.username,
-      body.password,
-      body.role,
-    );
-  }
-
-  @UseGuards(JwtAuthGuard)
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body()
-    body: {
-      username?: string;
-      password?: string;
-      role?: string;
-    },
+    @Body() body: any,
   ) {
-    return this.usersService.updateUser(id, body);
+    return this.usersService.update(id, body);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   remove(
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.usersService.deleteUser(id);
+    return this.usersService.remove(id);
   }
 }

@@ -4,6 +4,7 @@ import {
   OnModuleInit,
   OnModuleDestroy,
 } from '@nestjs/common';
+
 import * as mysql from 'mysql2/promise';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
@@ -12,7 +13,9 @@ import * as path from 'path';
 dotenv.config();
 
 @Injectable()
-export class DatabaseService implements OnModuleInit, OnModuleDestroy {
+export class DatabaseService
+  implements OnModuleInit, OnModuleDestroy
+{
   private pool!: mysql.Pool;
 
   async onModuleInit(): Promise<void> {
@@ -20,11 +23,11 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     const port = Number(process.env.DB_PORT || 3306);
     const user = process.env.DB_USER;
     const password = process.env.DB_PASSWORD;
-    const database = process.env.DB_NAME || 'defaultdb';
+    const database = process.env.DB_NAME || 'quickbite_midterm';
 
     if (!host || !user || !password) {
       throw new Error(
-        'Missing database configuration. Check DB_HOST, DB_USER, and DB_PASSWORD.',
+        'Missing database configuration. Check DB_HOST, DB_PORT, DB_USER, and DB_PASSWORD in your .env file.',
       );
     }
 
@@ -35,7 +38,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         : path.join(process.cwd(), 'certs', 'ca.pem'));
 
     if (!fs.existsSync(caPath)) {
-      throw new Error(`CA certificate not found: ${caPath}`);
+      throw new Error(
+        `CA certificate not found: ${caPath}. Check your DB_CA_CERT_PATH or certs/ca.pem file.`,
+      );
     }
 
     const ca = fs.readFileSync(caPath, 'utf8');
@@ -46,10 +51,17 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       user,
       password,
       database,
+
       waitForConnections: true,
-      connectionLimit: 10,
+      connectionLimit: 5,
+      maxIdle: 5,
+      idleTimeout: 60000,
       queueLimit: 0,
-      connectTimeout: 20000,
+      connectTimeout: 30000,
+
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 10000,
+
       ssl: {
         ca,
         rejectUnauthorized: true,
@@ -61,12 +73,19 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
       try {
         await connection.ping();
+
+        const [rows] = await connection.query(
+          'SELECT DATABASE() AS database_name',
+        );
+
         console.log('MySQL database connected successfully');
+        console.log('Connected database:', rows);
       } finally {
         connection.release();
       }
     } catch (error) {
       await this.pool.end();
+      console.error('MySQL database connection failed:', error);
       throw error;
     }
   }
@@ -79,6 +98,12 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   getPool(): mysql.Pool {
+    if (!this.pool) {
+      throw new Error(
+        'Database connection pool is not initialized.',
+      );
+    }
+
     return this.pool;
   }
 }
