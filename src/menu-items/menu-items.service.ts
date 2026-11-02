@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 
 import { DatabaseService } from '../database/database.service';
+
 import {
   ResultSetHeader,
   RowDataPacket,
@@ -13,7 +14,9 @@ import {
 
 @Injectable()
 export class MenuItemsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+  ) {}
 
   private pool() {
     return this.db.getPool();
@@ -28,8 +31,14 @@ export class MenuItemsService {
   ];
 
   private validateBody(body: Record<string, any>) {
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      throw new BadRequestException('Invalid request body');
+    if (
+      !body ||
+      typeof body !== 'object' ||
+      Array.isArray(body)
+    ) {
+      throw new BadRequestException(
+        'Invalid request body',
+      );
     }
 
     const entries = Object.entries(body).filter(
@@ -105,7 +114,7 @@ export class MenuItemsService {
   async findAll() {
     const [rows] =
       await this.pool().execute<RowDataPacket[]>(
-        'SELECT * FROM menu_item',
+        'SELECT * FROM menu_item ORDER BY item_id ASC',
       );
 
     return rows;
